@@ -1,23 +1,43 @@
-name: Tester Next.js
+name: Deploy Next.js to GitHub Pages
 
 on:
-    pull_request:
-        branches:
-            - main
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        container:
-            # Recomenda-se usar uma imagem baseada em Node.js se estiver usando 'container'
-            # (Você já está fazendo isso corretamente, o que define o ambiente básico)
-            image: node:20 
-        steps:
-            # 1. Checkout do Código (sem parâmetro node-version)
-            - uses: actions/checkout@v4 # Atualizado para v4 ou v5 (opcional, mas recomendado)
-              with:
-                  fetch-depth: 20
-            # 3. Executar Comandos
-            - run: npm ci
-            - run: npm test
-            - run: npm run build
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure Pages site
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: next
+          token: ${{ secrets.GITHUB_TOKEN }}
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Ajuste este caminho conforme a saída do build do seu projeto Next.js
+          path: .next
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
